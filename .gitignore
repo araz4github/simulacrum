@@ -1,0 +1,5 @@
+build/
+tests/host_test
+.DS_Store
+*.o
+*.d
