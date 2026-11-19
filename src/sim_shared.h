@@ -33,6 +33,29 @@ inline float BipolarDetent(float norm)
     return s * a / (0.5f - kDetent);
 }
 
+/** Tape / Grain Mix knobs: the first 20 % of travel is the layer's level
+ *  (silent → full, fully dry); the remaining 80 % is the original
+ *  dry → wet mix law. */
+constexpr float kMixLevelZone = 0.2f;
+
+struct MixZone
+{
+    float level;   ///< 0..1 layer level (audio taper), 1 above the zone
+    float mix;     ///< 0..1 original mix-law position, 0 inside the zone
+};
+
+inline MixZone SplitMixKnob(float norm)
+{
+    if (norm < 0.f) norm = 0.f;
+    if (norm > 1.f) norm = 1.f;
+    if (norm < kMixLevelZone)
+    {
+        const float z = norm / kMixLevelZone;
+        return {z * z, 0.f};
+    }
+    return {1.f, (norm - kMixLevelZone) / (1.f - kMixLevelZone)};
+}
+
 /* Function choices for the assignable jack J8 (Global page, P6). */
 enum JackFn : uint8_t
 {

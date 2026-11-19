@@ -128,11 +128,16 @@ void EngineProcess(const float* const* in, float** out, size_t n)
     const Params& p = g_params;
 
     /* ── Mix law (spec "Mixing") ───────────────────────────────────── */
-    const float a_t   = Clamp(p.tape_mix, 0.f, 1.f);
+    /* Each Mix knob: first 20 % = layer level (fully dry), then the
+     * original dry → wet law over the remaining 80 %. */
+    const MixZone z_t = SplitMixKnob(p.tape_mix);
+    const MixZone z_g = SplitMixKnob(p.grain_mix);
+
+    const float a_t   = z_t.mix;
     const float dry_t = Cos01(0.25f * a_t);
     const float wet_t = Sin01(0.25f * a_t);
 
-    const float a_g = Clamp(p.grain_mix, 0.f, 1.f);
+    const float a_g = z_g.mix;
     float dry_g, wet_g, src;
     if (a_g < 0.5f)
     {
@@ -149,7 +154,12 @@ void EngineProcess(const float* const* in, float** out, size_t n)
         src   = y;
     }
 
-    const float dry   = s_dry.Step(dry_t < dry_g ? dry_t : dry_g);
+    /* Dry = the lower of the two layers' dry amounts (as before), times
+     * the louder layer's level: one layer turned off no longer pulls the
+     * dry down, and with both off the dry is gone too.  Above 20 % on
+     * both knobs this is exactly the original law. */
+    const float lvl_max = z_t.level > z_g.level ? z_t.level : z_g.level;
+    const float dry   = s_dry.Step((dry_t < dry_g ? dry_t : dry_g) * lvl_max);
     const float wt    = s_wet_t.Step(wet_t);
     const float wg    = s_wet_g.Step(wet_g);
     const float srcm  = s_src.Step(src);

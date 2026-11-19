@@ -82,8 +82,11 @@ extern const MorphSnapPoint kEnvSnaps[4] = {
     {2.f / 3.f, pal::kCyan}, {1.f, pal::kViolet}};
 } // namespace sim
 
-static const MorphSnapPoint kGrainMixSnaps[3] = {
-    {0.f, pal::kCyan}, {0.5f, pal::kWhite}, {1.f, pal::kAmber}};
+/* Dark → warm white over the level zone (0–20 %), then the original
+ * cyan → white → amber over the mix (20–100 %). */
+static const MorphSnapPoint kGrainMixSnaps[5] = {
+    {0.f, {0x14, 0x14, 0x14}}, {0.2f, pal::kWarmWhite}, {0.2001f, pal::kCyan},
+    {0.6f, pal::kWhite}, {1.f, pal::kAmber}};
 static const MorphSnapPoint kFeastSnaps[2] = {
     {0.f, pal::kViolet}, {1.f, pal::kCyan}};
 static const MorphSnapPoint kSineSawSnaps[2] = {
@@ -122,7 +125,7 @@ static VirtualKnob t_micro = VirtualKnob(kPotBottomRight, "Microspeed")
 
 static VirtualKnob g_mix = VirtualKnob(kPotTopLeft, "Mix")
     .Linear(0.f, 100.f).Unit("%").Ident("grain.mix")
-    .Ring(Gradient(kGrainMixSnaps, 3));
+    .Ring(Gradient(kGrainMixSnaps, 5));
 
 static VirtualKnob g_clock = VirtualKnob(kPotTopRight, "Clock")
     .Selector(20).Labels(kGrainRatioLabels).Ident("grain.ratio")
@@ -677,10 +680,12 @@ static void AudioCallback(daisy::AudioHandle::InputBuffer  in,
 static constexpr float Zone(int z, int n) { return (static_cast<float>(z) + 0.5f) / n; }
 
 static const float kDefaults[kNumPages][kNumPots] = {
-    /* Tape:  mix 50 %, clock ×1, feedback 25 %, tone flat, wow 10 %, micro off */
-    {0.50f, Zone(5, 11), 25.f / 105.f, 0.5f, 0.10f, 0.5f},
-    /* Grain: mix 25 %, clock ×1, size 1 s, count 6, envelope 0 (square), 1× */
-    {0.25f, Zone(10, 20), 0.7926f, Zone(5, 36), 0.f, 0.5f},
+    /* Tape:  mix 60 % (= 50 % of the dry/wet range), clock ×1, feedback 25 %,
+     *        tone flat, wow 10 %, micro off */
+    {0.60f, Zone(5, 11), 25.f / 105.f, 0.5f, 0.10f, 0.5f},
+    /* Grain: mix 40 % (= 25 % of the dry/wet range), clock ×1, size 1 s,
+     *        count 6, envelope 0 (square), 1× */
+    {0.40f, Zone(10, 20), 0.7926f, Zone(5, 36), 0.f, 0.5f},
     /* Stack: level 0, C4, detune 10 %, cutoff open, attack 0, release 0 */
     {0.f, 0.5f, 0.10f, 0.5f, 0.f, 0.f},
     /* Global: gain 1×, out 1×, spread 25 %, grains→filter 25 %, sub 25 %, CV6 cutoff */

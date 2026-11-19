@@ -121,6 +121,14 @@ outputs on the board.
 - 1-A and 2-A each set their own layer's wet level.
 - Dry level = the lower of the two knobs' dry amounts.
 - Stack output (3-C level) is added on top.
+- v1.1: the first 20 % of each Mix knob is that layer's level (audio
+  taper, fully dry; the wet is 0 there). The original law runs over 20–100 %.
+  Dry = min(dry_tape, dry_grain) × max(level_tape, level_grain). An off
+  layer no longer pulls the dry to zero, both off removes the dry, and the
+  law is unchanged when both knobs are at or above 20 %. The tape → grain
+  recording source (tape mix) ignores the tape level, so grains can still
+  sample the input with the tape layer off. Defaults moved to keep the same
+  sound: Tape 50 % → 60 %, Grain 25 % → 40 %.
 
 ## Grain buffer character (decided)
 - Grain buffer only; tape stays smooth and dark.

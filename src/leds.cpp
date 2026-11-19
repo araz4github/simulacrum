@@ -162,9 +162,18 @@ extern const alchemy::MorphSnapPoint kEnvSnaps[4];
 
 void OdTapeMix(LedPanel& p, uint8_t pot, const ArcGeometry& geo, float norm, uint32_t, void*)
 {
-    /* Fill breathes with the level of the repeats. */
+    /* Level zone (first 20 %): a warm-white fill growing in brightness
+     * with the layer level (dry only).  Above it: amber, breathing with
+     * the level of the repeats. */
     RingFrame f;
     f.BeginOverlay(geo);
+    const MixZone z = SplitMixKnob(norm);
+    if (z.mix <= 0.f)
+    {
+        Fill(f, pal::kWarmWhite, norm, 0.15f + 0.6f * z.level);
+        f.Emit(p, pot);
+        return;
+    }
     const float env = Clamp(g_tel.tape_env * 4.f, 0.f, 1.f);
     Fill(f, pal::kAmber, norm, 0.35f + 0.65f * env);
     f.Emit(p, pot);

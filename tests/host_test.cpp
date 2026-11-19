@@ -174,12 +174,12 @@ static float PeakFreq(const std::vector<float>& v, float lo, float hi, size_t a,
 static void Neutral()
 {
     g_params = Params{};
-    g_params.tape_mix      = 0.f;
+    g_params.tape_mix      = kMixLevelZone;   /* full level, fully dry */
     g_params.tape_feedback = 0.f;
     g_params.tape_wow      = 0.f;
     g_params.tape_micro    = 0.5f;
     g_params.tape_tone     = 0.5f;
-    g_params.grain_mix     = 0.f;
+    g_params.grain_mix     = kMixLevelZone;
     g_params.stack_level   = 0.f;
     g_params.stack_cutoff  = 0.5f;
     g_params.stack_feast   = 0.f;
@@ -201,6 +201,33 @@ static void TestPassthrough()
     const float in_rms = 0.5f / std::sqrt(2.f);
     CHECK(std::fabs(Rms(o.l, 24000) - in_rms) < 0.02f,
           "dry RMS %.3f (input %.3f)", Rms(o.l, 24000), in_rms);
+}
+
+static void TestMixLevelZone()
+{
+    std::printf("\n[mix] first 20 %% of each Mix knob = layer level (dry only)\n");
+    const float in_rms = 0.5f / std::sqrt(2.f);
+    g_sine_hz = 440.f;
+    auto dry_rms = [&](float tm, float gm) {
+        Neutral();
+        g_params.tape_mix = tm; g_params.grain_mix = gm;
+        EngineInit(kFs, kBlock);
+        Run(0.5f, Sine);
+        Stereo o = Run(0.5f, Sine);
+        return Rms(o.l) / in_rms;
+    };
+    const float off  = dry_rms(0.f, 0.f);
+    const float half = dry_rms(0.1f, 0.f);
+    const float t_on = dry_rms(0.2f, 0.f);
+    const float g_on = dry_rms(0.f, 0.2f);
+    const float g_mx = dry_rms(0.f, 0.6f);   /* grain 50/50, tape off */
+    CHECK(off < 0.01f, "both layers off: output %.3f of input", off);
+    CHECK(std::fabs(half - 0.25f) < 0.03f, "tape at 10 %%: %.3f (quarter, audio taper)", half);
+    CHECK(std::fabs(t_on - 1.f) < 0.07f && std::fabs(t_on - g_on) < 0.01f,   /* output soft clip ≈ −0.5 dB */
+          "one layer at 20 %%: tape %.3f / grain %.3f of input", t_on, g_on);
+    /* Grain at 50/50 with tape off: the dry half survives (the tape layer
+     * being off doesn't pull it to zero). Wet grains add on top. */
+    CHECK(g_mx > 0.4f, "tape off, grain 50/50: output %.3f of input", g_mx);
 }
 
 static size_t g_impulse_at = 0;
@@ -411,7 +438,7 @@ static void TestGrainCrunch()
 {
     std::printf("\n[grain] 12-bit / 24 kHz buffer: no content above ~11 kHz\n");
     Neutral();
-    g_params.grain_mix    = 0.5f;      /* 50/50 dry/wet; dry kept for ref */
+    g_params.grain_mix    = 0.6f;      /* 50/50 dry/wet; dry kept for ref */
     g_params.grain_count  = 8;
     g_params.grain_size_s = 0.3f;
     g_params.grain_shape  = 0.f;       /* square */
@@ -696,7 +723,7 @@ static int Bench(const char* scenario, float seconds)
     {
         Neutral();
         Params& p = g_params;
-        p.grain_mix = 0.5f; p.grain_size_s = 4.f; p.grain_ratio = 1.f; p.clock_period_s = 0.5f;
+        p.grain_mix = 0.6f; p.grain_size_s = 4.f; p.grain_ratio = 1.f; p.clock_period_s = 0.5f;
         p.grain_shape = 0.f;
         p.grain_count = static_cast<uint32_t>(std::atoi(scenario + 6));   /* e.g. grains24 */
         if (std::strstr(scenario, "-stretch")) p.grain_speed = 2.f;
@@ -717,8 +744,8 @@ static int Bench(const char* scenario, float seconds)
     {
         /* Typical heavy patch: tape on, 12 slow grains, 4 ringing notes. */
         Params& p = g_params;
-        p.tape_mix = 0.5f; p.tape_feedback = 0.5f; p.tape_wow = 0.3f;
-        p.grain_mix = 0.5f; p.grain_count = 12; p.grain_size_s = 1.f; p.grain_speed = 0.5f;
+        p.tape_mix = 0.6f; p.tape_feedback = 0.5f; p.tape_wow = 0.3f;
+        p.grain_mix = 0.6f; p.grain_count = 12; p.grain_size_s = 1.f; p.grain_speed = 0.5f;
         p.grain_ratio = 0.5f; p.stack_level = 0.7f; p.stack_voices = 4; p.stack_release = 0.7f;
         p.stack_cutoff = 0.3f; p.sine_saw = 0.5f;
         for (int i = 0; i < 4; i++) { Note(0.1f * i); Run(0.01f, Silence); }
@@ -740,6 +767,7 @@ int main(int argc, char** argv)
 
     std::printf("Simulacrum host DSP tests\n");
     TestPassthrough();
+    TestMixLevelZone();
     TestMonoNormal();
     TestTapeDelayTime();
     TestTapeStability();

@@ -32,7 +32,7 @@ The page colour shows on B1 and in the rings. Values below are the startup defau
 ### Tape (amber)
 | Pot | Control | Notes |
 |---|---|---|
-| P1 | Mix | dry → wet · **50 %** |
+| P1 | Mix | 0–20 %: layer level (silent → full, dry only); 20–100 %: dry → wet · **60 %** (half wet) |
 | P2 | Clock | delay = clock × ¼, ⅓, ½, ⅔, ¾, **1**, 3/2, 2, 3, 4, 8; changes glide like tape |
 | P3 | Feedback | 0–105 %, saturates rather than running away · **25 %** |
 | P4 | Tone | bipolar DJ filter in the feedback loop: CCW darker, CW brighter, compounding per repeat · **flat** |
@@ -44,7 +44,7 @@ The page colour shows on B1 and in the rings. Values below are the startup defau
 ### Grain (cyan)
 | Pot | Control | Notes |
 |---|---|---|
-| P1 | Mix | dry → 50/50 at noon → 25/75; the second half records the *tape output* into the grain buffer · **25 %** |
+| P1 | Mix | 0–20 %: layer level (silent → full, dry only); 20–100 %: dry → 50/50 at 60 % → 25/75; past 60 % it records the *tape output* into the grain buffer · **40 %** |
 | P2 | Clock | grain clock = clock × 1/24 … **1** … 24 (20 steps): how far back grains read, and their rhythm |
 | P3 | Size | 5 ms – 4 s of audio per grain · **1 s** |
 | P4 | Count | 1–36 grains (more triggers per clock as it rises; dense clouds auto-spread) · **6** |
@@ -78,6 +78,14 @@ P1 Sine/Saw (sines always dominate) · P2 Octaves (unison / −12 / −12+12) ·
 ### Settings: hold B2 + B3 for 2 s
 Page 1: LED brightness (30 %), presets. Page 2 "Clock" (press B1): internal **Tempo**
 (120 BPM), used when nothing is patched to J3.
+
+**Layer levels.** The first 20 % of the Tape and Grain Mix knobs is each layer's
+volume. At 0 % the layer is off. At 20 % it is at full level and fully dry, and the
+original dry → wet mix runs from there. The dry signal is the lower of the two
+layers' dry amounts (as before), scaled by whichever layer is louder. Both knobs at 0
+mutes the input entirely, leaving only the stack. One at 0 hands the dry entirely
+to the other. Setting a knob a little below 20 % gives a quiet dry bed. The rings
+show the level zone as a dim warm-white fill.
 
 Hidden pages and Settings use the SDK's pot catch: a knob takes over once you turn it
 past its stored value. Bipolar knobs have a wide centre detent, shown as a 3-LED bar.
