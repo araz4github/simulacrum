@@ -129,6 +129,15 @@ outputs on the board.
   recording source (tape mix) ignores the tape level, so grains can still
   sample the input with the tape layer off. Defaults moved to keep the same
   sound: Tape 50 % → 60 %, Grain 25 % → 40 %.
+- v1.1: Grains → Filter is now a diversion of the grain layer, not an
+  independent feed. Share = 0.75 · k · (2 − k), so 25 % of travel diverts
+  33 % and full travel diverts 75 %. Filter feed = share × grain wet;
+  normal path = (1 − share) × grain wet; the level is unchanged with Cutoff
+  at noon. A dry grain layer feeds nothing.
+- v1.1: J8 gains "CV → Grain Spray" (±5 V = ±full range, added to the
+  Spray knob + J7), inserted after Spacing: Feedback, Cutoff, Spacing,
+  Grain Spray, Envelopes, Sub-Osc Out, Grain Trigger Out. The Cutoff
+  default keeps its zone.
 
 ## Grain buffer character (decided)
 - Grain buffer only; tape stays smooth and dark.

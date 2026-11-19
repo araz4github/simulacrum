@@ -96,7 +96,9 @@ uint32_t  win_blocks    = 0;
 uint32_t  gov_holdoff = 0;
 float     fs = 48000.f;
 
-constexpr float kFeastGain = 0.9f;
+/* Grains → Filter: the most of the grain layer that is diverted
+ * through the notch filter (the rest stays on its normal path). */
+constexpr float kFeastMaxShare = 0.75f;
 
 } // namespace
 
@@ -263,7 +265,7 @@ void EngineProcess(const float* const* in, float** out, size_t n)
     if (gc.count > voice_cap) gc.count = voice_cap;   /* CPU governor */
     gc.shape      = p.grain_shape;
     gc.speed      = p.grain_speed;
-    gc.spray      = p.grain_spray;
+    gc.spray      = Clamp(p.grain_spray + p.spray_cv, 0.f, 1.f);
     gc.pitch_st   = p.grain_pitch_st;
     gc.pitch_rand = p.grain_pitch_rand;
     gc.dir        = p.grain_dir;
@@ -271,18 +273,21 @@ void EngineProcess(const float* const* in, float** out, size_t n)
     gc.freeze     = p.grain_freeze != 0u;
     gc.source_mix = srcm;
     gc.octaves    = p.octaves;
-    gc.feast_active = feast > 0.002f;
-    gc.render       = wg > 0.001f || feast > 0.002f;
+    gc.feast_active = feast > 0.002f && wg > 0.001f;
+    gc.render       = wg > 0.001f;
     { const uint32_t t0 = daisy::System::GetTick();
       grains.Process(in_l, in_r, tmix_l, tmix_r, gr_l, gr_r, fe_l, fe_r, n, gc);
       prof_grain += static_cast<float>(daisy::System::GetTick() - t0); }
 
+    /* Grains → Filter diverts the grain layer (at its own level) into
+     * the notch filter: share 0 → 75 %, eased so the first part of the
+     * knob already moves a lot (25 % of travel → 33 % diverted). */
+    const float share = kFeastMaxShare * feast * (2.f - feast);
+    const float g_feed = share * wg;
     for (size_t i = 0; i < n; i++)
     {
-        /* Grains → Filter: independent of the grain mix, so it is heard
-         * even with the grain layer turned down. */
-        fe_l[i] *= kFeastGain * feast;
-        fe_r[i] *= kFeastGain * feast;
+        fe_l[i] *= g_feed;
+        fe_r[i] *= g_feed;
     }
 
     /* ── 4. Stack + notch ──────────────────────────────────────────── */
@@ -291,7 +296,7 @@ void EngineProcess(const float* const* in, float** out, size_t n)
       prof_stack += static_cast<float>(daisy::System::GetTick() - t0); }
 
     /* ── 5. Mix ────────────────────────────────────────────────────── */
-    const float g_main = (1.f - feast) * wg;
+    const float g_main = (1.f - share) * wg;
     for (size_t i = 0; i < n; i++)
     {
         float l = dry * in_l[i] + wt * tape_l[i] + g_main * gr_l[i] + st_l[i];

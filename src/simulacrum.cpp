@@ -72,7 +72,7 @@ static constexpr float kSpeedDown[6] = {2.f / 3.f, 0.5f, 1.f / 3.f, 0.25f, 0.125
 static const char* kOctaveLabels[3] = {"Unison", "-12/0", "-12/0/+12"};
 static const char* kVoiceLabels[8] = {"1", "2", "3", "4", "5", "6", "7", "8"};
 static const char* kJackFnLabels[kNumJackFns] = {
-    "CV > Feedback", "CV > Cutoff", "CV > Spacing", "CV > Envelopes",
+    "CV > Feedback", "CV > Cutoff", "CV > Spacing", "CV > Grain Spray", "CV > Envelopes",
     "Sub-Osc Out", "Grain Trigger Out"};
 
 namespace sim {
@@ -617,6 +617,7 @@ static constexpr Jack kJ8[kNumJackFns] = {
     Jack("J8", "CV6: Feedback CV",      JackSig::CvBi),
     Jack("J8", "CV6: Cutoff CV",        JackSig::CvBi),
     Jack("J8", "CV6: Spacing CV",       JackSig::CvBi),
+    Jack("J8", "CV6: Grain Spray CV",   JackSig::CvBi),
     Jack("J8", "CV6: Envelopes CV",     JackSig::CvBi),
     Jack("J8", "CV6: Sub-Osc Out",      JackSig::CvBi),
     Jack("J8", "CV6: Grain Trigger Out", JackSig::Trig),
@@ -640,17 +641,25 @@ static void OnEnvelopeCv(float cv, uint32_t, void*)
     g_params.env_cv = Clamp(kCvFullRange * (cv - 0.5f), -1.f, 1.f);
 }
 
+/* CV → Grain Spray: J8 adds to the spray knob (and J7), ±5 V = ±1. */
+static void OnSprayCv(float cv, uint32_t, void*)
+{
+    g_params.spray_cv = Clamp(kCvFullRange * (cv - 0.5f), -1.f, 1.f);
+}
+
 static void ApplyJ8(uint32_t fn)
 {
     if (fn == j8_applied) return;
     j8_applied = fn;
-    g_params.env_cv = 0.f;
+    g_params.env_cv   = 0.f;
+    g_params.spray_cv = 0.f;
     CvJack& jack = hw.j8;
     switch (fn)
     {
         case kJackCvFeedback:  jack.DisableCvOutput(); cv_matrix.Jack(kCvAssign).To(t_fb).Atten(kCvFullRange);       break;
         case kJackCvCutoff:    jack.DisableCvOutput(); cv_matrix.Jack(kCvAssign).To(s_cutoff).Atten(kCvFullRange);   break;
         case kJackCvSpacing:   jack.DisableCvOutput(); cv_matrix.Jack(kCvAssign).To(sx_spacing).Atten(kCvFullRange); break;
+        case kJackCvSpray:     jack.DisableCvOutput(); cv_matrix.Jack(kCvAssign).Custom(OnSprayCv);                 break;
         case kJackCvEnvelopes: jack.DisableCvOutput(); cv_matrix.Jack(kCvAssign).Custom(OnEnvelopeCv);              break;
         default:               cv_matrix.Jack(kCvAssign).Off(); jack.EnableCvOutput();                              break;
     }

@@ -34,10 +34,11 @@ constexpr Rgb kGreen     = {0x00, 0xFF, 0x40};
 constexpr Rgb kYellow    = {0xFF, 0xD0, 0x00};
 
 /* J8 option colours: the colour of what each option drives. */
-constexpr Rgb kJackFnColors[6] = {
+constexpr Rgb kJackFnColors[7] = {
     kAmber,       /* CV → feedback      */
     kViolet,      /* CV → cutoff        */
     kPink,        /* CV → notch spacing */
+    kGrainBlue,   /* CV → grain spray   */
     kWarmWhite,   /* CV → envelopes     */
     kDeepViolet,  /* sub-oscillator out */
     kCyan,        /* grain trigger out  */

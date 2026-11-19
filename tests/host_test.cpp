@@ -456,6 +456,44 @@ static void TestGrainCrunch()
     CHECK(Db(hf / mf) < -20.f, "grains alone, 16 kHz vs 3 kHz: %.1f dB", Db(hf / mf));
 }
 
+static void TestFeastDivert()
+{
+    std::printf("\n[feast] Grains -> Filter diverts up to 75 %% of the grain layer\n");
+    g_sine_hz = 400.f;
+    auto grains_rms = [&](float feast, float cutoff, float gmix) {
+        Neutral();
+        g_params.grain_mix    = gmix;
+        g_params.grain_count  = 8;
+        g_params.grain_size_s = 0.3f;
+        g_params.stack_feast  = feast;
+        g_params.stack_cutoff = cutoff;
+        EngineInit(kFs, kBlock);
+        Run(2.f, Sine);
+        const size_t start = g_clock;
+        Stereo o = Run(2.f, Sine);
+        /* Grains alone: remove the known dry part (25 % at full mix,
+         * 100 % in the level zone). */
+        const float dry = gmix >= 1.f ? 0.25f : 1.f;
+        std::vector<float> w(o.l.size());
+        for (size_t i = 0; i < w.size(); i++) w[i] = o.l[i] - dry * Sine(start + i, 0);
+        return Rms(w);
+    };
+    /* Full grain mix (25 % dry / 75 % wet); the dry part is subtracted. */
+    const float open0 = grains_rms(0.f, 0.5f, 1.f);
+    const float open1 = grains_rms(1.f, 0.5f, 1.f);
+    CHECK(std::fabs(Db(open1 / open0)) < 1.5f,
+          "cutoff open: level kept when diverted (%.1f dB)", Db(open1 / open0));
+    /* Notch parked on the 400 Hz input (Cutoff ≈ 0.225 → 400 Hz). */
+    const float notch0 = grains_rms(0.f, 0.225f, 1.f);
+    const float notch1 = grains_rms(1.f, 0.225f, 1.f);
+    CHECK(notch1 < 0.5f * notch0,
+          "notch on the grains at full Grains -> Filter: grains %.3f → %.3f", notch0, notch1);
+    /* Grain layer in its level zone (no wet): nothing to divert. */
+    const float dry0 = grains_rms(0.f, 0.225f, kMixLevelZone);
+    const float dry1 = grains_rms(1.f, 0.225f, kMixLevelZone);
+    CHECK(std::fabs(dry1 - dry0) < 0.002f, "grain layer dry: feed adds nothing (%.4f / %.4f)", dry0, dry1);
+}
+
 /** Hold the J6 gate and start a note at @p volts (control-loop path). */
 static void Note(float volts)
 {
@@ -783,6 +821,7 @@ int main(int argc, char** argv)
     TestStackLpg();
     TestShortGrainLift();
     TestNotch();
+    TestFeastDivert();
     TestStereoCutoff();
     TestWorstCase();
     std::printf("\n%d passed, %d failed\n", g_pass, g_fail);

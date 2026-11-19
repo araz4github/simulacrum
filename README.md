@@ -87,6 +87,13 @@ mutes the input entirely, leaving only the stack. One at 0 hands the dry entirel
 to the other. Setting a knob a little below 20 % gives a quiet dry bed. The rings
 show the level zone as a dim warm-white fill.
 
+**Grains → Filter** (Global P4) moves part of the grain layer off its normal path
+and through the stack's dual-notch filter. The share rises quickly at first, from 0 to
+75 % at full (about a third at the 25 % default), and the remaining 25 % stays on the
+normal path. The filtered part follows the grain layer's own level, so with Grain Mix
+in its level zone there is nothing to send. The notches only act when Cutoff is away
+from noon.
+
 Hidden pages and Settings use the SDK's pot catch: a knob takes over once you turn it
 past its stored value. Bipolar knobs have a wide centre detent, shown as a 3-LED bar.
 
@@ -102,7 +109,7 @@ past its stored value. Bipolar knobs have a wide centre detent, shown as a 3-LED
 | J5 (CV3) | Grain Size CV |
 | J6 (CV4) | Gate / trigger for the stack notes |
 | J7 (CV5) | Grain Spray CV |
-| J8 (CV6) | Assignable (Global P6): Feedback CV, Cutoff CV, Spacing CV, Envelopes CV, Sub-Osc Out, Grain Trigger Out |
+| J8 (CV6) | Assignable (Global P6): Feedback CV, Cutoff CV, Spacing CV, Grain Spray CV (adds to J7 and the knob), Envelopes CV (attack + release together), Sub-Osc Out, Grain Trigger Out |
 | J9 / J10 | Audio out L / R |
 
 CV inputs span the full knob range at ±5 V. The Hermetic Modular editor shows every

@@ -62,10 +62,11 @@ enum JackFn : uint8_t
     kJackCvFeedback  = 0,
     kJackCvCutoff    = 1,
     kJackCvSpacing   = 2,
-    kJackCvEnvelopes = 3,   ///< attack + release together
-    kJackSubOut      = 4,
-    kJackTrigOut     = 5,
-    kNumJackFns      = 6,
+    kJackCvSpray     = 3,   ///< adds to J7 / the Grain Spray knob
+    kJackCvEnvelopes = 4,   ///< attack + release together
+    kJackSubOut      = 5,
+    kJackTrigOut     = 6,
+    kNumJackFns      = 7,
 };
 
 constexpr uint32_t kMaxStackVoices = 8u;
@@ -106,6 +107,7 @@ struct Params
     float stack_attack   = 0.f;    ///< 0..1 knob
     float stack_release  = 0.f;    ///< 0..1 knob
     float env_cv         = 0.f;    ///< J8 "CV → Envelopes", −1..+1
+    float spray_cv       = 0.f;    ///< J8 "CV → Grain Spray", −1..+1
     uint32_t stack_voices = 1;     ///< 1..8 notes ringing at once
     uint32_t stack_mute  = 0;
 
